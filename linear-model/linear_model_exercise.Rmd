@@ -71,14 +71,13 @@ The model explains the variability of the phenomenon in 53%.
 ##### Model visualization
 
 ```{r}
-wykres <- ggplot() +
+ggplot() +
   ggtitle("Linear model sbp = b0 + b1 * age") +
   geom_point(aes(df$age, df$sbp)) +
   geom_line(aes(m1$model$age, m1$fitted.values), color = "green3") +
   xlab("age")+
   ylab("systolic blood pressure") +
   theme_classic()
-plot(wykres)
 ```
 
 ### Verification of the Model 1 assumptions
@@ -154,7 +153,7 @@ Model 2: $y_{i} = 103.3491 + 0.9833x_{1} + e_{i}$
 The chart below shows a comparison between model 1 and model 2, before and after the rejection of outliers.
 
 ```{r}
-wykres <- ggplot() +
+ggplot() +
   ggtitle("Linear models comparison", 
           subtitle= "          green line - model for the entire set, 
           orange line - model after discarding outliers") +
@@ -164,7 +163,6 @@ wykres <- ggplot() +
   xlab("age")+
   ylab("systolic blood pressure") +
   theme_classic()
-plot(wykres)
 ```
 
 ### Verification of the Model 2 assumptions
