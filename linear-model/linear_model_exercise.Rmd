@@ -4,7 +4,7 @@ output:
   html_document:
     toc: yes
     toc_float: yes
-    theme: flatly
+    theme: readable
     code_folding: hide
   pdf_document:
     toc: yes
@@ -12,7 +12,7 @@ output:
 
 This document describes the analytical process that was carried out to build a linear statistical model properly fitted to the data presented.
 
-The data contained in the sbp.csv file contain observations from 70 patients. Each observation consists of the following variables:
+The data contained in the `sbp.csv` file contain observations from 70 patients. Each observation consists of the following variables:
 
 -   sbp -- systolic blood pressure in mmHg
 -   age -- the age of the patient
@@ -25,7 +25,7 @@ The adopted significance level in statistical tests is 0.05.
 Literature: D. G. Kleinbaum, L. L. Kupper, K. E. Muller, A. Nizam, A. (1998), Applied Regression Analysis and Other Multivariable Methods, Duxbury Press, North Scituate, MA
 
 
-### Used libraries
+#### Used libraries
 
 ```{r, message=FALSE, warning=FALSE}
 library("car")
@@ -36,26 +36,26 @@ library("lmtest")
 ### Data loading and initial analysis
 
 ```{r}
-df1 <-  read.table("sbp.csv", header = TRUE, sep = ";",dec=",")
+df <-  read.table("sbp.csv", header = TRUE, sep = ";",dec=",")
 ```
 
 Descriptive statistics for variables in the dataset:
 
 ```{r}
-df1$gender <- as.factor(df1$gender)
-summary(df1)
+df$gender <- as.factor(df$gender)
+summary(df)
 ```
 
 ## Linear model with age variable
 
-### Estimation of model one
+### Estimation of Model 1
 
 ```{r}
-m1 <- lm(sbp ~ age, data = df1)
+m1 <- lm(sbp ~ age, data = df)
 summary(m1)
 ```
 
-Model one: $y_{i} = 104.1781 + 0.9872x_{1} + e_{i}$
+Model 1: $y_{i} = 104.1781 + 0.9872x_{1} + e_{i}$
 
 Interpretation of the model parameter significance tests:
 
@@ -63,12 +63,16 @@ Interpretation of the model parameter significance tests:
 
 - For t-student tests of the significance of a single parameter for both the parameter `b0` and` b1` `p-value < 0.05`, therefore we reject the null hypotheses about the irrelevance of the parameters for the model. Both parameters significantly affect the variability of the model.
 
-Model visualization
+
+The model explains the variability of the phenomenon in 53%.
+
+
+##### Model visualization
 
 ```{r}
 wykres <- ggplot() +
   ggtitle("Linear model sbp = b0 + b1 * age") +
-  geom_point(aes(df1$age, df1$sbp)) +
+  geom_point(aes(df$age, df$sbp)) +
   geom_line(aes(m1$model$age, m1$fitted.values), color = "green3") +
   xlab("age")+
   ylab("systolic blood pressure") +
@@ -76,265 +80,237 @@ wykres <- ggplot() +
 plot(wykres)
 ```
 
-### Sprawdzenie założeń modelu 1
+### Verification of the Model 1 assumptions
 
-Na wykresach diagnostycznych można sprawdzić, czy wartość średnia reszt jest bliska 0, co oznacza właściwą postać funkcyjną modelu, czy wariancja (rozrzut) reszt nie zależy od y (czy reszty są równomierne rozmieszczone wzdłuż linii poziomej, na poziomie=0), czy rozkład reszt jest normalny oraz zauważyć obserwacje nietypowe o dużych resztach.
+Before performing the statistical tests, you can look at the three graphs below to roughly determine the characteristics of the model.
 
 ```{r}
 plot(m1, which = 1:3)
 ```
 
-**Testy statystyczne dla modelu 1**
+From the graphs it can be concluded that the mean value of the residuals is close to 0, which means that the assumption of a linear relationship was valid. Moreover, the variance of the random term is constant (there is homoscedasticity). There is an outlier, denoted as observation number 70, which distorts the estimate and rules out the normality of the distribution of the residuals.
 
-Test normalności Shapiro-Wilka dla reszt modelu 1
+
+#### Statistical tests
+
+
+##### Shapiro-Wilk normality test for residuals
 
 ```{r}
 shapiro.test(m1$residuals)
 ```
+**Conclusion**: `p-value < 0.05`, we reject the null hypothesis of normal residual distribution.
 
-**Wniosek**
 
-p \< 0.05, odrzucamy hipotezę zerową o normalności rozkładu reszt.
-
-Test Breuscha-Pagana jednorodności wariancji (homoskedastyczności) reszt modelu 1
+##### Breusch-Pagan test for heteroskedasticity
 
 ```{r}
 bptest(m1)
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the residuals are distributed with equal variance.
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej o jednorodności wariacji reszt.
-
-Test Durbina-Watsona niezależności reszt modelu 1
+##### Durbin-Watson test for autocorrelation 
 
 ```{r}
-dwtest(m1, order.by = ~age, data = df1)
+dwtest(m1, order.by = ~age, data = df)
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the residuals are not autocorrelated.
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej, nie występuje autokorelacja składnika losowego.
 
-Test Harveya-Colliera liniowości modelu 1
+##### Harvey-Collier test for linearity
 
 ```{r}
-harvtest(m1, order.by = ~age, data = df1)
+harvtest(m1, order.by = ~age, data = df)
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the regression is correctly modeled as linear.
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej o liniowości modelu.
 
-### Wykrycie obserwacji wpływowych
+##### Detecting influential observations
 
-Ocena wpływu poszczególnych obserwacji na parametry strukturalne modelu 1 za pomocą miar: odległość Cooka, wskaźnik wpływu leverage (dźwignia)
+The following graphs show the assessment of the impact of individual observations on the structural parameters of Model 1 using measures: Cook's distance, leverage influence indicator.
 
 ```{r}
 plot(m1, which = 4:5)
 ```
 
-### Estymacja modelu 2
+### Estimation of Model 2
 
-Po odrzuceniu obserwacji nietypowych nr 70 należy oszacować nowy model i dokonać jego oceny. Proszę zastanowić się, czy nie należałoby odrzucić jakieś inne obserwacje.
+The model below was estimated after discarding atypical observation number 70.
 
 ```{r}
-m2 <- lm(sbp ~ age, data = df1, subset = 1:69)
+m2 <- lm(sbp ~ age, data = df, subset = 1:69)
 summary(m2)
 ```
 
 Model 2: $y_{i} = 103.3491 + 0.9833x_{1} + e_{i}$
 
-**Wnioski**
+**Findings**: The standard deviation of residuals decreased and the degree of explanation of variability by the model increased to 63%.
 
-Spadło odchylenie standarowe reszt, zwiekszył się stopień wyjaśnienia zmienności przez model do 63%.
 
-Porównanie na wykresie modelu 1 oraz modelu 2 przed i po odrzuceniu wartości nietypowych.
+The chart below shows a comparison between model 1 and model 2, before and after the rejection of outliers.
 
 ```{r}
 wykres <- ggplot() +
-  ggtitle("Dopasowanie modelu liniowego sbp = b0+b1*age", 
-          subtitle= "          punkty - df empiryczne, 
-          linia zielona - model dla całego zbioru, 
-          linia pomarańczowa - model po odrzuceniu wartości nietypowych") +
-  geom_point(aes(df1$age, df1$sbp)) +
+  ggtitle("Linear models comparison", 
+          subtitle= "          green line - model for the entire set, 
+          orange line - model after discarding outliers") +
+  geom_point(aes(df$age, df$sbp)) +
   geom_line(aes(m1$model$age, m1$fitted.values), color = "green3") +
   geom_line(aes(m2$model$age, m2$fitted.values), color = "darkorange") +
-  xlab("wiek")+
-  ylab("ciśnienie krwi") +
+  xlab("age")+
+  ylab("systolic blood pressure") +
   theme_classic()
 plot(wykres)
 ```
 
-### Sprawdzenie założeń modelu 2
+### Verification of the Model 2 assumptions
 
-Wykresy diagnostyczne dla modelu 2
+Diagnostic charts for Model 2.
 
 ```{r}
 plot(m2)
 ```
 
-**Testy statystyczne dla modelu 2**
+There are only slight changes in the charts. The fit of the values in the Normal Q-Q plot has improved.
 
-Test normalności Shapiro-Wilka dla reszt modelu 2
+#### Statistical tests
+
+
+##### Shapiro-Wilk normality test for residuals
 
 ```{r}
 shapiro.test(m2$residuals)
 ```
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the residuals are normally distributed.
 
-**Wniosek**
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej o normalności rozkładu reszt.
-
-Test Breuscha-Pagana jednorodności wariancji (homoskedastyczności) reszt modelu 2
+##### Breusch-Pagan test for heteroskedasticity
 
 ```{r}
 bptest(m2)
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the residuals are distributed with equal variance.
 
-p \> 0.05, brak podstaw do odrzucenia do odrzucenia hipotezy zerowej o jednorodności wariacji reszt.
-
-Test Durbina-Watsona niezależności reszt modelu 2
+##### Durbin-Watson test for autocorrelation 
 
 ```{r}
-dwtest(m2, order.by = ~age, data = df1[1:69,])
+dwtest(m2, order.by = ~age, data = df[1:69,])
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the residuals are not autocorrelated.
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej, nie występuje autokorelacja składnika losowego.
 
-Test Harveya-Colliera liniowości modelu 2
+##### Harvey-Collier test for linearity
 
 ```{r}
-harvtest(m2, order.by = ~age, data = df1[1:69,])
+harvtest(m2, order.by = ~age, data = df[1:69,])
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the regression is correctly modeled as linear.
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej o liniowości modelu.
-
-### Outliers test
-
-Wykrycie obserwacji nietypowych za pomocą testu statystycznego **Bonferroni Outlier Test**.
-
-Funkcja podaje p-value Bonferroniego dla każdej obserwacji.
-
-argument n.max - liczba podawanych obserwacji nietypowych jest nie większa niż n.max
+##### Bonferroni Outlier Test
 
 ```{r}
 outlierTest(m1, n.max = Inf)
 outlierTest(m2, n.max = Inf)
 ```
 
-## Model liniowy ze zmiennymi wiek i płeć
+Based on the Bonferroni test, it can be seen that after excluding outlier number 70, there is no need to remove other observations.
 
-Zmienna jakościowa jest automatyczne kodowania za pomocą zmiennych 0-1, grupą referencyjną (0) jest wariant pierwszy w porządku alfabetycznym. Grupę referencyjną można zmieniać za pomocą funkcji `relevel()`. To samo otrzymamy tworząc samodzielnie zmienne 0-1. Poroszę porównać model ze zmienną `gender_0_1` (por. także model po zamianie kodowania 0 i 1).
 
-### Estymacja modelu 3
+## Linear model with age and gender variables
+
+### Estimation of Model 3
 
 ```{r}
-m3 <- lm(sbp ~ age + gender, data = df1, subset = 1:69)
+m3 <- lm(sbp ~ age + gender, data = df, subset = 1:69)
 summary(m3)
 ```
 Model 3: $y_{i} = 96.7735 + 0.9872x_{1} + 13.5135x_{2} + e_{i}$
 
-```{r}
-m3$coefficients[1] + m3$coefficients[3]
-```
+**Findings**: The standard deviation of residuals decreased further and the degree of explanation of variability by the model increased to 77%.
 
-Przedstawienie modelu 3 dla mężczyzn i kobiet na wykresie
+Shown below in the graph is Model 3 for men and women.
 
 ```{r}
-wykres <- ggplot() +
-  ggtitle("Dopasowanie modelu liniowego sbp = b0+b1*age+b2*gender", 
-          subtitle= "          punkty - df empiryczne: niebieskie - mężczyźni, czerwone - kobiety, 
-          linia niebieska - model dla mężczyzn, 
-          linia czerwona - model dla kobiet") +
+ggplot() +
+  ggtitle("Linear model sbp = b0 + b1 * age + b2 * gender", 
+          subtitle= "          blue - male
+          red - female") +
   geom_point(aes(m3$model[m3$model$gender=="male",]$age, m3$model[m3$model$gender=="male",]$sbp), color = "blue") +
   geom_point(aes(m3$model[m3$model$gender=="female",]$age, m3$model[m3$model$gender=="female",]$sbp), color = "red") +
   geom_line(aes(m3$model[m3$model$gender=="male",]$age, predict(m3, data.frame(age = m3$model[m3$model$gender=="male",]$age, gender ="male"))), color = "blue") +
   geom_line(aes(m3$model[m3$model$gender=="female",]$age, predict(m3, data.frame(age = m3$model[m3$model$gender=="female",]$age, gender ="female"))), color = "red") +
-  xlab("wiek")+
-  ylab("ciśnienie krwi") +
+  xlab("age")+
+  ylab("systolic blood pressure") +
   theme_classic()
-plot(wykres)
 ```
 
-**Wnioski**
+**Interpretation of Model 3 parameters**
 
-Spadło odchylenie standarowe reszt, zwiekszył się stopień wyjaśnienia zmienności przez model do 76%.
+The constant term `b0 = 96.7` in this model is not interpreted as the study did not include infants or children.
 
-**Interpretacja modelu 3**
+For `b1 = 0.9561` with the variable` age`
+If the age increases by 1 year, the blood pressure will increase by an average of 0.9561 mmHg for people of the same sex, ceteris paribus.
 
-Wyraz wolny `b0 = 96.7` w tym modelu nie ma interpretacji, gdyż badanie nie obejmowało osób w wieku niemowlęcym czy dziecięcym.
+For `b2 = 13.5134` with the variable` gender`
+The blood pressure of men is on average 13.51 mmHg higher than that of women of the same age, ceteris paribus.
 
-wsp. `b1 = 0.9561` przy zmiennej `age`
+### Verification of the Model 3 assumptions
 
-Jeżeli wiek wzrośnie o 1 rok, to cieśnienie wzrośnie średnio o 0.9561 mmHg dla osób tej samej płci, ceteris paribus.
-
-wsp. `b2 = 13.5134` przy zmiennej `gender`
-
-Ciśnienie mężczyzn jest przeciętnie o 13,51 mmHg większe od ciśnienia kobiet w tym samym wieku, ceteris paribus.
-
-### Sprawdzenie założeń modelu 3
-
-Sprawdzenie, czy zmienne objaśniające nie są współliniowe.
+Checking whether explanatory variables are not collinear.
 
 ```{r}
 vif(m3)
 ```
 
-Wykresy diagnostyczne dla modelu 3
+Diagnostic charts for Model 3
 
 ```{r}
 plot(m3)
 ```
 
-**Testy statystyczne dla modelu 3**
+#### Statistical tests
 
-Test normalności Shapiro-Wilka dla reszt modelu 3
+
+##### Shapiro-Wilk normality test for residuals
 
 ```{r}
 shapiro.test(m3$residuals)
 ```
+**Conclusion**: `p-value < 0.05`, we reject the null hypothesis of normal residual distribution.
 
-**Wniosek**
 
-p \< 0.05, odrzucamy hipotezę zerową o normalności rozkładu reszt.
-
-Test Breuscha-Pagana jednorodności wariancji (homoskedastyczności) reszt modelu 3
+##### Breusch-Pagan test for heteroskedasticity
 
 ```{r}
 bptest(m3)
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the residuals are distributed with equal variance.
 
-p \> 0.05, brak podstaw do odrzucenia do odrzucenia hipotezy zerowej o jednorodności wariacji reszt.
-
-Test Durbina-Watsona niezależności reszt modelu 3
+##### Durbin-Watson test for autocorrelation 
 
 ```{r}
-dwtest(m3, order.by = ~age, data = df1[1:69,])
+dwtest(m3, order.by = ~age, data = df[1:69,])
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the residuals are not autocorrelated.
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej, nie występuje autokorelacja składnika losowego.
 
-Test Harveya-Colliera liniowości modelu 3
+##### Harvey-Collier test for linearity
 
 ```{r}
-harvtest(m3, order.by = ~age, data = df1[1:69,])
+harvtest(m3, order.by = ~age, data = df[1:69,])
 ```
 
-**Wniosek**
+**Conclusion**: `p-value > 0.05`, no grounds for rejecting the null hypothesis, the regression is correctly modeled as linear.
 
-p \> 0.05, brak podstaw do odrzucenia hipotezy zerowej o liniowości modelu.
 
-## Podsumowanie
+## Summary
 
-W modelu 2 reszty mają rozkład normalny, ale model 2 wyjaśnia tylko w 64% kształtowanie się ciśnienia krwi. Po dodaniu zmiennej płeć dopasowanie modelu się poprawiło: zmniejszyło się odchylenie standardowe reszt, model 3 wyjaśnia w 77% kształtowanie się ciśnienia krwi, lecz reszty nie mają rozkładu normalnego. Należy poszukać innej postaci modelu.
+In model 2, the residuals are normally distributed, but the model explains only 64% of the variation in blood pressure. When the gender variable was added, the fit of the model improved: the standard deviation of the residuals decreased, Model 3 explained 77% of the blood pressure development, but the residuals did not have a normal distribution. Another form of model is needed.
