@@ -1,5 +1,4 @@
-# "Analytical exercise of building a linear model"
-
+# Analytical exercise of building a linear model
 
 This document describes the analytical process that was carried out to build a linear statistical model properly fitted to the data presented.
 
@@ -92,22 +91,22 @@ Interpretation of the model parameter significance tests:
 
 The model explains the variability of the phenomenon in 53%.
 
-
 ##### Model visualization
 
 
+
 ```r
-wykres <- ggplot() +
+ggplot() +
   ggtitle("Linear model sbp = b0 + b1 * age") +
   geom_point(aes(df$age, df$sbp)) +
   geom_line(aes(m1$model$age, m1$fitted.values), color = "green3") +
   xlab("age")+
   ylab("systolic blood pressure") +
   theme_classic()
-plot(wykres)
 ```
 
 ![](linear_model_exercise_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+
 
 ### Verification of the Model 1 assumptions
 
@@ -248,7 +247,7 @@ The chart below shows a comparison between model 1 and model 2, before and after
 
 
 ```r
-wykres <- ggplot() +
+ggplot() +
   ggtitle("Linear models comparison", 
           subtitle= "          green line - model for the entire set, 
           orange line - model after discarding outliers") +
@@ -258,7 +257,6 @@ wykres <- ggplot() +
   xlab("age")+
   ylab("systolic blood pressure") +
   theme_classic()
-plot(wykres)
 ```
 
 ![](linear_model_exercise_files/figure-html/unnamed-chunk-13-1.png)<!-- -->

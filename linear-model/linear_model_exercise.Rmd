@@ -2,6 +2,7 @@
 title: "Analytical exercise of building a linear model"
 output:
   html_document:
+    keep_md: yes
     fig_width: 6
     fig_height: 4
     toc: yes
