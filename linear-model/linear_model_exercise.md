@@ -1,15 +1,5 @@
----
-title: "Analytical exercise of building a linear model"
-output:
-  html_document:
-    keep_md: true
-    toc: yes
-    toc_float: yes
-    theme: readable
-    code_folding: hide
-  pdf_document:
-    toc: yes
----
+# "Analytical exercise of building a linear model"
+
 
 This document describes the analytical process that was carried out to build a linear statistical model properly fitted to the data presented.
 

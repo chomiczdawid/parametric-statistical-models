@@ -2,13 +2,12 @@
 title: "Analytical exercise of building a linear model"
 output:
   html_document:
-    keep_md: true
+    fig_width: 6
+    fig_height: 4
     toc: yes
     toc_float: yes
     theme: readable
     code_folding: hide
-  pdf_document:
-    toc: yes
 ---
 
 This document describes the analytical process that was carried out to build a linear statistical model properly fitted to the data presented.
@@ -67,8 +66,8 @@ Interpretation of the model parameter significance tests:
 
 The model explains the variability of the phenomenon in 53%.
 
-
 ##### Model visualization
+
 
 ```{r}
 ggplot() +
@@ -79,6 +78,7 @@ ggplot() +
   ylab("systolic blood pressure") +
   theme_classic()
 ```
+
 
 ### Verification of the Model 1 assumptions
 
