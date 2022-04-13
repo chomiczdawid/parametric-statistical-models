@@ -37,7 +37,7 @@ library("lmtest")
 ### Data loading and initial analysis
 
 ```{r}
-df <-  read.table("sbp.csv", header = TRUE, sep = ";",dec=",")
+df <-  read.table("../data/sbp.csv", header = TRUE, sep = ";",dec=",")
 ```
 
 Descriptive statistics for variables in the dataset:

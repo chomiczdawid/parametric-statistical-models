@@ -1,0 +1,225 @@
+---
+title: "Analytical exercise of building a generalized linear model"
+output:
+  html_document:
+    keep_md: yes
+    fig_width: 6
+    fig_height: 4
+    toc: yes
+    toc_float: yes
+    theme: readable
+    code_folding: hide
+---
+
+This document presents a continuation of the analysis from the previous exercise, this time using the generalized linear model.
+
+The data contained in the `sbp.csv` file contain observations from 70 patients. Each observation consists of the following variables:
+
+-   sbp -- systolic blood pressure in mmHg
+-   age -- the age of the patient
+-   gender -- patient's gender
+
+The aim of the study is to estimate a generalized linear model that explains the blood pressure level better than a simple linear model.
+
+The adopted significance level in statistical tests is 0.05.
+
+Literature: D. G. Kleinbaum, L. L. Kupper, K. E. Muller, A. Nizam, A. (1998), Applied Regression Analysis and Other Multivariable Methods, Duxbury Press, North Scituate, MA
+
+
+#### Used libraries
+
+```{r message=FALSE, warning=FALSE}
+library("car")
+library("ggplot2")
+library("pscl")
+library("lmtest")
+```
+
+### Data loading and initial analysis
+
+```{r}
+df1 <-  read.table("../data/sbp.csv", header = TRUE, sep = ";",dec=",")
+df1$gender <- as.factor(df1$gender)
+```
+
+Descriptive statistics for variables in the dataset:
+
+```{r}
+summary(df1)
+```
+
+### Selection of the GLM model type for the variable Y = sbp
+
+Models are estimated for the $Y$ variable with a normal distribution `family = gaussian` with different link functions.
+
+
+#### Identity link function
+
+The generalized linear model estimated with the identity link function is equivalent to the linear model. In the previous exercise, the linear models estimated by the least squares method were used, so now the maximum likelihood method will be used.
+
+In the following formula, the default value of the argument `link = identity`.
+
+```{r}
+m4 <- glm(sbp ~ age + gender, data = df1, subset = 1:69, family = gaussian)
+summary(m4)
+```
+
+Model 4: $sbp = 96.7735 + 0.9561 * age + 13.5135 * gender$
+
+**Findings**: The `age` and `gender` variables are statistically significant (Wald test for cumulative significance).
+
+Additionally, a test of significance of all independent variables in the model was performed. Either the likelihood-ratio test or the Wald test can be performed.
+
+```{r}
+lrtest(m4)
+waldtest(m4)
+```
+
+**Conclusion**: Both `age` and `gender` are statistically significant independently.
+
+A linear model with variable age and gender was obtained. A comparison of the **model 3** obtained by the least squares method with the **model 4** obtained by the maximum likelihood method is shown below.
+
+**Model 3** estimation results from the previous document.
+
+```{r}
+m3 <- lm(sbp ~ age + gender, data = df1, subset = 1:69)
+summary(m3)
+```
+
+**Findings**: The GLM model estimated by the maximum likelihood method for the variable Y with a normal distribution with an identity link function is equivalent to the classical linear model estimated by the least squares method (models are identical).
+
+
+#### Logarithmic link function
+
+```{r}
+m5 <- glm(sbp ~ age + gender, data = df1, subset = 1:69, family = gaussian(link = "log"))
+summary(m5) 
+```
+Model 5: $\log(sbp) = 4.6391 + 0.0066 * age + 0.0911 * gender$
+
+**Findings**: The `AIC` value is lower than in the previous model, which proves its better fit.
+
+
+##### Significance tests of variables
+
+```{r}
+lrtest(m5)
+waldtest(m5)
+```
+
+**Conclusion**: Both `age` and `gender` are statistically significant.
+
+
+#### Inverse link function
+
+```{r}
+m6 <- glm(sbp ~ age + gender, data = df1, subset = 1:69, family = gaussian(link = "inverse"))
+summary(m6) 
+```
+
+Model 6: $\frac{1}{sbp} = 0.009204 - 0.000044 * age - 0.000598 * gender$
+
+**Notice**: The structural parameters are negative. So as the explanatory variable grows, the explained variable decreases.
+
+
+##### Significance tests of variables
+
+```{r}
+lrtest(m6)
+waldtest(m6)
+```
+
+**Conclusion**: Both `age` and `gender` are statistically significant.
+
+
+### Diagnostic charts for models 4-6
+
+Check if the mean of residuals is close to zero, if the scatter of residuals is independent of the variable y and if there are no outliers.
+
+```{r}
+plot(m4, which = 1)
+plot(m5, which = 1)
+plot(m6, which = 1)
+```
+
+
+Detection of atypical observations using the **Bonferroni Outlier test**.
+
+```{r}
+outlierTest(m4, n.max = Inf)
+outlierTest(m5, n.max = Inf)
+outlierTest(m6, n.max = Inf)
+```
+
+**Conclusions**: the `p-value` in each of the tests is less than 0.05, so there are no significant outliers for all models.
+
+
+#### Identifying influential observations in charts
+```{r}
+plot(m4, which = 4)
+plot(m5, which = 4)
+plot(m6, which = 4)
+plot(m4, which = 5)
+plot(m5, which = 5)
+plot(m6, which = 5)
+```
+
+
+
+### Comparison of models 4-6
+
+Assessment of GLM models fit: 
+-   deviance statistics (`deviance`), 
+-   information criterion (`AIC`),
+-   pseudo-R2 measures.
+
+In the case of `family = gaussian`, the deviation statistic is equal to the sum of the squared residuals, so the standard deviation of the residuals (mean error of estimate) `= (deviance / df) ^ 0.5`
+
+The `glm_model_eval` function has been defined to calculate the above measures. The argument of this function is an object of class glm.
+
+```{r results = FALSE}
+glm_model_eval <- function(model) {
+  residual_std_error <- (model$deviance/model$df.residual)^0.5
+  AIC <- c(model$aic)
+  McFadden <- pR2(model)[4]
+  Cragg_Uhler <- pR2(model)[6]
+  evaluation <- data.frame(residual_std_error, AIC, McFadden, Cragg_Uhler)
+  return(evaluation)
+}
+models_eval <- rbind(model_4=glm_model_eval(m4), model_5=glm_model_eval(m5), model_6=glm_model_eval(m6))
+```
+
+```{r}
+models_eval
+```
+**Conclusions**: Taking into account the given statistics, it can be concluded that the model 5 (normal log) is the best fit.
+
+
+**Interpretation of Model 5 parameters**
+
+$log(SBP) = b_0 + b_1 * age + b_2 * gender$
+
+
+$SBP = exp(b_0 + b_1 * age + b_2 * gender)$
+
+```{r}
+m5$coefficients
+```
+
+Values $exp(b_i)$
+
+```{r}
+exp(m5$coefficients)
+```
+
+The constant term `b0 = 4.6361` in this model is not interpreted as the study did not include infants or children.
+
+For $b_1 = 0.0066$ --> $exp(b_1) = 1.0066$  with the variable` age`
+
+
+If the age increases by 1 year, the blood pressure will increase by an average of 0.66% for people of the same sex, ceteris paribus.
+
+For $b_2 = 0.0911$ --> $exp(b_2) = 1.0954$ with the variable` gender`
+
+
+The blood pressure of men (`gender = 1`) is on average 9.5%  higher than that of women (`gender = 0`) of the same age, ceteris paribus.
