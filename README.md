@@ -1,6 +1,11 @@
 ## Parametric Statistical Models
 This repository contains analytical exercises on the practical application of parametric statistical models in the R programming language. Each exercise is saved as an R Markdown document.
 
+### Analysis methods included
+- linear models
+- generalized linear models
+- logit models (in progress)
+
 ## Used technology
 - [R version 4.1.3](https://cran.r-project.org/src/base/R-4/)
 - [RStudio](https://www.rstudio.com/)
