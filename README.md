@@ -15,6 +15,7 @@ This repository contains analytical exercises on the practical application of pa
 library("car")
 library("ggplot2")
 library("lmtest")
+library("pscl")
 ```
 
 ## How to view?
