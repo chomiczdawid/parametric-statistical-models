@@ -1,15 +1,4 @@
----
-title: "Analytical exercise of building a generalized linear model"
-output:
-  html_document:
-    keep_md: yes
-    fig_width: 6
-    fig_height: 4
-    toc: yes
-    toc_float: yes
-    theme: readable
-    code_folding: hide
----
+# Analytical exercise of building a generalized linear model
 
 This document presents a continuation of the analysis from the previous exercise, this time using the generalized linear model.
 
