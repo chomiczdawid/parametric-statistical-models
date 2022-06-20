@@ -4,9 +4,9 @@ This document presents a continuation of the analysis from the previous exercise
 
 The data contained in the `sbp.csv` file contain observations from 70 patients. Each observation consists of the following variables:
 
--   sbp -- systolic blood pressure in mmHg
--   age -- the age of the patient
--   gender -- patient's gender
+-   sbp - systolic blood pressure in mmHg
+-   age - the age of the patient
+-   gender - patient's gender
 
 The aim of the study is to estimate a generalized linear model that explains the blood pressure level better than a simple linear model.
 
