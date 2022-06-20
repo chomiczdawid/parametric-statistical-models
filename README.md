@@ -20,4 +20,4 @@ library("pROC")
 ```
 
 ## How to view?
-The preferred preview file is .html, but GitHub does not support previewing these files, so a simplified .md file is also included. Unfortunately, interactive menu and mathematical equations are not visible in the .md preview. To view the full interactive R Markdown document, download the .html file. 
+The preferred preview file is `.html`, but GitHub does not support previewing these files, so a simplified `.md` file is also included. Unfortunately, interactive menu and mathematical equations are not visible in the `.md` preview. To view the full interactive R Markdown document, download the `.html` file. 
