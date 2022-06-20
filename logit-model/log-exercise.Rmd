@@ -1,0 +1,341 @@
+---
+title: "Analytical exercise of building a logit and probit model"
+output: 
+  html_document:
+    keep_md: yes
+    fig_width: 6
+    fig_height: 4
+    toc: yes
+    toc_float: yes
+    theme: readable
+    code_folding: hide
+---
+This document presents the process of building a logit and probit models that explains the satisfaction with the financial situation of the households surveyed.
+
+The file `gosp_dom.csv` contains data on a sample of 500 randomly selected households in a certain voivodeship of Poland. For these households, the values of the following variables were obtained:
+
+- income –- average monthly income per person in a household,
+- expenses –- average monthly expenses per person in a household,
+- gender –- gender of the household head,
+- cars –- number of cars in the household,
+- satisfaction -– satisfaction with the financial situation.
+
+Data source: University of Gdansk
+
+#### Used libraries
+```{r message=FALSE, warning=FALSE}
+library("car")
+library("ggplot2")
+library("pscl")
+library("pROC")
+library("gridExtra")
+```
+
+## Data loading and initial analysis
+```{r}
+setwd("D:/Dev/GitHub/parametric-statistical-models")
+df <-  read.table("data/households.csv", header = TRUE, sep = ";",dec=",")
+df$gender <- as.factor(df$gender)
+df$satisfaction <- as.factor(df$satisfaction)
+```
+
+Descriptive statistics for variables in the dataset:
+
+```{r echo=FALSE} 
+summary(df)
+```
+
+There are definitely more men than women in the dataset.
+
+### Relationship between material satisfaction and potential predictors
+Graphs describing how the conditional distribution of a categorical variable (in this case satisfaction with the material situation) changes over a numerical variable.
+
+```{r fig.width=10, fig.height=10}
+par(mfrow = c(3,2))
+cdplot(df$income, df$satisfaction, xlab = "income", ylab = "satisfaction")
+cdplot(df$expenses, df$satisfaction, xlab = "expenses", ylab = "satisfaction")
+cdplot(df$expenses, df$gender, xlab = "expenses", ylab = "gender")
+cdplot(df$income, df$gender, xlab = "income", ylab = "gender")
+cdplot(df$cars, df$gender, xlab = "cars", ylab = "gender")
+cdplot(df$cars, df$satisfaction, xlab = "cars", ylab = "satisfaction")
+```
+
+The first charts show a fairly strong positive relation between income/expenses and satisfaction. There is also a positive relation between satisfaction and the number of cars. An interesting spike in women's expenses is visible in the relation between expenses and gender.
+
+### Dividing dataset into training and test
+The train set is used to build the model, and the test set is used to evaluate the model. We will make a random division in the proportion: 70% and 30% respectively. Each time the function `sample()` is called, we get a different set. In order to repeat the experiment, the `set.seed()` function is used, which initializes the "seed" for the random number generator - for a fixed "seed" at any time and on each device, the same set of random numbers is obtained.
+
+```{r}
+set.seed(1257)
+n <- nrow(df)
+rand_num <- sample(c(1:n), round(0.7*n), replace = FALSE)
+df_train <- df[rand_num,]
+df_test <- df[-rand_num,]
+```
+
+Checking the proportions of satisfied and dissatisfied in data subsets.
+
+```{r results='hide'}
+table(df$satisfaction)/nrow(df)
+table(df_train$satisfaction)/nrow(df_train)
+table(df_test$satisfaction)/nrow(df_test)
+```
+
+**Original dataset**
+```{r echo=FALSE}
+table(df$satisfaction)/nrow(df)
+```
+**Train subset**
+```{r echo=FALSE}
+table(df_train$satisfaction)/nrow(df_train)
+```
+**Test subset**
+```{r echo=FALSE}
+table(df_test$satisfaction)/nrow(df_test)
+```
+
+The proportion of satisfied and dissatisfied in the test and train sets is acceptable.
+
+### Checking the correlation of explanatory variables
+The variables used to build the model must not be overly correlated. To avoid this, a correlation threshold of 0.7 will be adopted
+
+Correlation matrix for explanatory numerical variables.
+```{r}
+cor(df_train[,c(1,2,4)])
+```
+
+All variables are statistically significantly correlated. However, there is over-correlation with expenses and income.
+
+## Estimation of one-factor binomial logit models
+We estimate the model for the dichotomous variable Y `family = binomial` with the default probit link function `link = logit`.
+
+```{r results='hide'}
+logit1 <- glm(satisfaction ~ income, data = df_train, family = binomial)
+logit2 <- glm(satisfaction ~ expenses, data = df_train, family = binomial)
+logit3 <- glm(satisfaction ~ cars, data = df_train, family = binomial)
+logit4 <- glm(satisfaction ~ gender, data = df_train, family = binomial)
+summary(logit1)$coefficients
+summary(logit2)$coefficients
+summary(logit3)$coefficients
+summary(logit4)$coefficients
+```
+**satisfaction ~ income**
+```{r echo=FALSE}
+summary(logit1)$coefficients
+```
+**satisfaction ~ expenses**
+```{r echo=FALSE}
+summary(logit2)$coefficients
+```
+**satisfaction ~ cars**
+```{r echo=FALSE}
+summary(logit3)$coefficients
+```
+**satisfaction ~ gender**
+```{r echo=FALSE}
+summary(logit4)$coefficients
+```
+
+### Evaluation of logit models 1-4
+```{r warning=FALSE,error=FALSE,results='hide'}
+binomial_model_eval <- function(model) {
+  AIC <- c(model$aic)
+  McFadden<-pR2(model)[4]
+  Cragg_Uhler<-pR2(model)[6]
+  score <- data.frame(AIC, McFadden, Cragg_Uhler)
+  return(score)
+}
+eval_res_logit <- rbind(
+  model_1=binomial_model_eval(logit1), 
+  model_2=binomial_model_eval(logit2), 
+  model_3=binomial_model_eval(logit3), 
+  model_4=binomial_model_eval(logit4))
+eval_res_logit
+```
+```{r echo=FALSE}
+eval_res_logit
+```
+
+**Findings**: Model 1 is the best model because the AIC criterion is the smallest and the other measures are the largest.
+
+Is it possible to attach any other explanatory variable to the model?
+
+```{r}
+logit0 <- glm(satisfaction ~ income + cars, data = df_train, family = binomial)
+summary(logit0)$coefficients
+```
+
+No variable can be included -- after adding variable `car` it becomes irrelevant and `gender` turned out to be irrelevant before.
+
+## Model selection and interpretation
+The model `logit1` was selected.
+
+```{r results='hide'}
+logit1$coefficients
+cat("\nexp(bi)\n")
+exp(logit1$coefficients)
+cat("\nexp(100*bi)\n")
+exp(logit1$coefficients[2]*100)
+```
+$logit(p) = -3,2297 + 0,0013 * income$
+
+$logit(p) = ln(\frac{p}{1-p})$
+
+$chance = \frac{p}{1-p} = exp(-3,2297+0,0013*income)$
+
+$\frac{p}{1-p}=e^{b_0+b_1*x_1}$
+
+$e^{b_0}$ -> chance when $x_i=0$
+
+$e^{b_1}$ -> odds ratio
+
+**Interpretation of Model 5 parameters**
+
+`exp(b0) = 0.040`, where `b0` is an intercept, is interpreted as a chance of an event in the reference group $x_i = 0$, if it makes logical sense -- not here.
+
+`exp(b1) = 1.0013` => `(exp(b)-1)*100% = 0.13%`
+
+If the income increases by 1 PLN, the chance of satisfaction will increase by 0.13%.
+
+`exp(100*b1) = 1.0013` => `(exp(100*b)-1)*100% = 13.5%`
+
+If the income increases by 100 PLN, the chance of satisfaction will increase by 13.5%.
+
+### Estimation of the probit binomial model
+We estimate the model for the dichotomous variable Y `family = binomial` with the probit link function `link = probit`.
+
+```{r}
+probit1 <- glm(satisfaction ~ income, data = df_train, family = binomial(link=probit))
+summary(probit1)$coefficients
+```
+
+How do we interpret the parameters of the probit model?
+
+In the case of the probit model, we determine whether a given variable is a stimulant (when $b_i>0$) or a destimulant of the model (when $b_i<0$).
+
+### Comparative evaluation of `logit1` and `probit1` models
+```{r results='hide'}
+eval_res__logit_probit <- rbind(
+  model_logit_1=binomial_model_eval(logit1), 
+  model_probit_1=binomial_model_eval(probit1))
+eval_res__logit_probit
+```
+
+```{r echo=FALSE}
+eval_res__logit_probit
+```
+
+**Conclusions**: Probit is a better model because the AIC criterion is the lowest and the pseudo-R2 measures are higher.
+
+### Comparison of the prediction quality of `logit1` and `probit1` models
+Relevance tables for the selected cut-off point p*.
+
+Let p* = the proportion of the training sample.
+
+**Relevance table for the logit model - train set**
+```{r echo=FALSE}
+p <- table(df_train$satisfaction)[2]/nrow(df_train)
+tab_traf <- data.frame(observed=logit1$y, predicted=ifelse(logit1$fitted.values>p, 1, 0))
+table(tab_traf)
+```
+
+**Relevance table for the probit model - train set**
+```{r echo=FALSE}
+tab_traf <- data.frame(observed=probit1$y, predicted=ifelse(probit1$fitted.values>p, 1, 0))
+table(tab_traf)
+
+```
+
+**Relevance table for the logit model - test set**
+```{r echo=FALSE}
+tab_traf <- data.frame(observed=df_test$satisfaction, predicted=ifelse(predict(logit1, df_test, type = "response")>p, 1, 0))
+table(tab_traf)
+```
+
+**Relevance table for the probit model - test set**
+```{r echo=FALSE}
+tab_traf <- data.frame(observed=df_test$satisfaction, predicted=ifelse(predict(probit1, df_test, type = "response")>p, 1, 0))
+table(tab_traf)
+```
+
+
+### Prediction quality measures
+Measurements based on the relevance table for the selected cut-off point p*.
+
+The following function `pred_measure` has been specified for the arguments: `model` (binomial model), `data` (e.g. training set, test set), `Y` (observed Y 0-1 in the analyzed data set).
+
+```{r}
+pred_measure <- function(model, data, Y, p = 0.5) {
+  tab <- table(observed = Y, predicted = ifelse(predict(model, data, type = "response") > p, 1, 0))
+  ACC <- (tab[1,1]+tab[2,2])/sum(tab)
+  ER <- (tab[1,2]+tab[2,1])/sum(tab)
+  SENS <- (tab[2,2]/(tab[2,1]+tab[2,2]))
+  SPEC <- (tab[1,1]/(tab[1,1]+tab[1,2]))
+  PPV <- (tab[2,2]/(tab[1,2]+tab[2,2]))
+  NPV <- (tab[1,1]/(tab[1,1]+tab[2,1]))
+  measures <- data.frame(ACC, ER, SENS, SPEC, PPV, NPV)
+  return(measures)
+}
+```
+
+Assessment of predictive ability on the train set.
+
+```{r echo=FALSE}
+pred_res <- rbind(
+  model_logit = pred_measure(model = logit1, data = df_train,  Y = df_train$satisfaction, p), 
+  model_probit = pred_measure(model = probit1, data = df_train, Y = df_train$satisfaction,  p))
+pred_res
+```
+
+Assessment of predictive ability on the test set.
+
+```{r echo=FALSE}
+pred_res <- rbind(
+  model_logit = pred_measure(model = logit1, data = df_test,  Y = df_test$satisfaction, p), 
+  model_probit = pred_measure(model = probit1, data = df_test, Y = df_test$satisfaction,  p))
+pred_res
+```
+
+**Findings**: Based on the above prediction quality measures, it can be concluded that the logit model turned out to be better.
+
+### Receiver Operating Characteristic curve
+The ROC curve presents the quality of the model prediction for all possible cut-off points p* (is independent of p* selection). For the models estimated on the training set, the quality of prediction on the training and test sets was compared below.
+
+```{r message=FALSE,fig.width=10, fig.height=4}
+par(mfrow = c(1,2))
+rocobj1 <- roc(logit1$y, logit1$fitted.values)
+rocobj1_t <- roc(df_test$satisfaction, predict(logit1, df_test, type = "response"))
+plot(rocobj1, main = "ROC for logit model", col="red")
+lines(rocobj1_t, col="blue")
+legend(x = "bottomright",legend=c("test set ROC", "train set ROC"),col=c("blue","red"),lty=1)
+
+rocobj2 <- roc(probit1$y, probit1$fitted.values)
+rocobj2_t <- roc(df_test$satisfaction, predict(probit1, df_test, type = "response"))
+plot(rocobj2, main = "ROC for probit model", col="red")
+lines(rocobj2_t, col="blue")
+legend(x = "bottomright",legend=c("test set ROC", "train set ROC"),col=c("blue","red"),lty=1)
+```
+
+### ROC curve area
+
+For train set.
+```{r message=FALSE}
+area_AUC_logit<-as.numeric(auc(logit1$y, logit1$fitted.values))
+area_AUC_probit<-as.numeric(auc(probit1$y, probit1$fitted.values))
+area_AUC <- rbind(area_AUC_logit, area_AUC_probit)
+area_AUC
+```
+
+For test set
+```{r message=FALSE}
+area_AUC_logit<-as.numeric(auc(df_test$satisfaction, predict(logit1, df_test, type = "response")))
+area_AUC_probit<-as.numeric(auc(df_test$satisfaction, predict(probit1, df_test, type = "response")))
+area_AUC <- rbind(area_AUC_logit, area_AUC_probit)
+area_AUC
+```
+
+**Findings**: Based on the area under the ROC curve, it can be concluded that the model has sufficient predictive power.
+
+## Summary
+
+The preliminary calculation of one-factor logit models showed that the best choice of the variable explaining the satisfaction variable is revenue. Then, the probit and logit models were calculated for the determined variables. Initially, the AIC criterion and pseudo R2 measures showed that the probit model better explains the variability of the examined features. However, in terms of the quality of prediction, the logit model turned out to be better. Based on the analysis of the ROC curve, it was found that the logit model has sufficient predictive power.

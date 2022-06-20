@@ -4,7 +4,7 @@ This repository contains analytical exercises on the practical application of pa
 ### Analysis methods included
 - linear models
 - generalized linear models
-- logit models (in progress)
+- logit and probit models
 
 ## Used technology
 - [R version 4.1.3](https://cran.r-project.org/src/base/R-4/)
@@ -16,7 +16,8 @@ library("car")
 library("ggplot2")
 library("lmtest")
 library("pscl")
+library("pROC")
 ```
 
 ## How to view?
-The preferred preview file is .html, but GitHub does not support previewing these files, so a simplified .md file is also included. Unfortunately, interactive menu and mathematical equations are not visible in the .md preview. To view the full interactive R Markdown document, download the .html file.
+The preferred preview file is .html, but GitHub does not support previewing these files, so a simplified .md file is also included. Unfortunately, interactive menu and mathematical equations are not visible in the .md preview. To view the full interactive R Markdown document, download the .html file. 

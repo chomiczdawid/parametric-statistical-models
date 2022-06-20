@@ -10,7 +10,6 @@ output:
     theme: readable
     code_folding: hide
 ---
-
 This document presents a continuation of the analysis from the previous exercise, this time using the generalized linear model.
 
 The data contained in the `sbp.csv` file contain observations from 70 patients. Each observation consists of the following variables:
