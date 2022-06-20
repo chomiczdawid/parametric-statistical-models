@@ -4,9 +4,9 @@ This document describes the analytical process that was carried out to build a l
 
 The data contained in the `sbp.csv` file contain observations from 70 patients. Each observation consists of the following variables:
 
--   sbp -- systolic blood pressure in mmHg
--   age -- the age of the patient
--   gender -- patient's gender
+-   sbp - systolic blood pressure in mmHg
+-   age - the age of the patient
+-   gender - patient's gender
 
 The aim of the study is to estimate a linear model explaining the blood pressure level and to verify the obtained model.
 

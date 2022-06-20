@@ -3,11 +3,11 @@ This document presents the process of building a logit and probit models that ex
 
 The file `gosp_dom.csv` contains data on a sample of 500 randomly selected households in a certain voivodeship of Poland. For these households, the values of the following variables were obtained:
 
-- income –- average monthly income per person in a household,
-- expenses –- average monthly expenses per person in a household,
-- gender –- gender of the household head,
-- cars –- number of cars in the household,
-- satisfaction -– satisfaction with the financial situation.
+- income – average monthly income per person in a household,
+- expenses – average monthly expenses per person in a household,
+- gender – gender of the household head,
+- cars – number of cars in the household,
+- satisfaction - satisfaction with the financial situation.
 
 Data source: University of Gdansk
 
@@ -212,7 +212,7 @@ summary(logit0)$coefficients
 ## cars         0.33891164 0.2358166332  1.437183 1.506660e-01
 ```
 
-No variable can be included -- after adding variable `car` it becomes irrelevant and `gender` turned out to be irrelevant before.
+No variable can be included - after adding variable `car` it becomes irrelevant and `gender` turned out to be irrelevant before.
 
 ## Model selection and interpretation
 The model `logit1` was selected.
@@ -239,7 +239,7 @@ $e^{b_1}$ -> odds ratio
 
 **Interpretation of Model 5 parameters**
 
-`exp(b0) = 0.040`, where `b0` is an intercept, is interpreted as a chance of an event in the reference group $x_i = 0$, if it makes logical sense -- not here.
+`exp(b0) = 0.040`, where `b0` is an intercept, is interpreted as a chance of an event in the reference group $x_i = 0$, if it makes logical sense - not here.
 
 `exp(b1) = 1.0013` => `(exp(b)-1)*100% = 0.13%`
 
